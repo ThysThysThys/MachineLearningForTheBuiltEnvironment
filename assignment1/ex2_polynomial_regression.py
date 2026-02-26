@@ -25,6 +25,12 @@ def func_constant_speed(v, t, b):
 
 # Error function constant speed
 def error_func_constant_speed(ps, ts, v, b):
+    """
+    ps -> True Position  (Given values)
+    ts -> True Time (Given value)
+    v -> Estimated Speed/Velocity
+    b -> Estimated Starting Position
+    """
     sse = 0
     for p, t in zip(ps, ts):
         error = (p - func_constant_speed(v, t, b))**2
@@ -33,9 +39,15 @@ def error_func_constant_speed(ps, ts, v, b):
 
 # Gradient for constant speed function wrt v
 def gradient_func_constant_speed_v(ps, ts, v, b):
+    """
+    ps -> True Position  (Given values)
+    ts -> True Time (Given value)
+    v -> Estimated Speed/Velocity
+    b -> Estimated Starting Position
+    """
     gradient = 0
     for p, t in zip(ps, ts):
-        print(p, t)
+        #print(p, t)
         gradient += -2 * t * (p - (v * t + b))
     return gradient
 
