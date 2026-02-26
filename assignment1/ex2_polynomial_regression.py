@@ -1,11 +1,16 @@
+import Plotter
+
+
 # given data
 pxs = [2, 1.08, -0.83, -1.97, -1.31, 0.57]
 pys = [0, 1.68, 1.82, 0.28, -1.51, -1.91]
 pzs = [1, 2.38, 2.49, 2.15, 2.59, 4.32]
 ts = range(1, 7)
+
+
 # parameters
 max_iterations = 100
-learning_rate = 0.001
+learning_rate = 0.01
 tolerance = 0.001
 initial_v = 1
 initial_b = 0
@@ -76,7 +81,33 @@ def gradient_descent_axis(max_iterations, learning_rate, initial_v, initial_b, p
     return v, b
 
 # test gradient descent for certain axis
-v, b = gradient_descent_axis(max_iterations, learning_rate, initial_v, initial_b, pxs, ts)
-print("v: ", v)
-print("b: ", b)
-print("Error: ", error_func_constant_speed(pzs, ts, v, b))
+
+xs=[]
+ys=[]
+zs=[]
+
+for iterations in (10,25,100):
+    for learning_rate in (0.01,0.01,0.001):
+        for initial_v in (1,2,3):
+            vx, bx = gradient_descent_axis(iterations, learning_rate, initial_v, initial_b, pxs, ts)
+            vy, by = gradient_descent_axis(iterations, learning_rate, initial_v, initial_b, pys, ts)
+            vz, bz = gradient_descent_axis(iterations, learning_rate, initial_v, initial_b, pzs, ts)
+
+            x=[]
+            y=[]
+            z=[]
+
+            for i in ts:
+                x.append(func_constant_speed(vx,i,bx))
+                y.append(func_constant_speed(vy,i,by))
+                z.append(func_constant_speed(vz,i,bz)) 
+            xs.append(x)
+            ys.append(y)
+            zs.append(z)
+#print("v: ", v)
+#print("b: ", b)
+#print("Error: ", error_func_constant_speed(pzs, ts, v, b))
+
+
+Plotter.plotter(xs,ys,zs)
+
