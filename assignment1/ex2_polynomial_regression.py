@@ -86,12 +86,14 @@ xs=[]
 ys=[]
 zs=[]
 
-for iterations in (10,25,100):
-    for learning_rate in (0.01,0.01,0.001):
-        for initial_v in (1,2,3):
+for iterations in (10,50):
+    for learning_rate in (0.001,):
+        for initial_v in (1,):
             vx, bx = gradient_descent_axis(iterations, learning_rate, initial_v, initial_b, pxs, ts)
             vy, by = gradient_descent_axis(iterations, learning_rate, initial_v, initial_b, pys, ts)
             vz, bz = gradient_descent_axis(iterations, learning_rate, initial_v, initial_b, pzs, ts)
+            
+            print(vx,vy,vz)
 
             x=[]
             y=[]
@@ -104,6 +106,10 @@ for iterations in (10,25,100):
             xs.append(x)
             ys.append(y)
             zs.append(z)
+
+print(xs)
+print(ys)
+print(zs)
 #print("v: ", v)
 #print("b: ", b)
 #print("Error: ", error_func_constant_speed(pzs, ts, v, b))

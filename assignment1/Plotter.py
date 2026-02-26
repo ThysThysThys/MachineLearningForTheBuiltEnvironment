@@ -29,6 +29,7 @@ def plotter(xs,ys,zs):
         ax.plot(xc,yc,zc, color='green',linewidth=2,label='Trajectory')
         #ax.legend(loc='upper right')
 
+   
     for a,b,c,d in zip(x,y,z,t):
        ax.text(a+0.15,b+0.15,c+0.15, f"t={d}", fontsize=8,fontweight='bold')
 
