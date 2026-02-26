@@ -9,8 +9,8 @@ ts = range(1, 7)
 
 
 # parameters
-max_iterations = 100
-learning_rate = 0.01
+max_iterations = 10000
+learning_rate = 0.1
 tolerance = 0.001
 initial_v = 1
 initial_b = 0
