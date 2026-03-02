@@ -15,8 +15,8 @@ ts=np.array([1,2,3,4,5,6,7])
 
 #Learning rate
 tolerance=1e-9
-iterations=300000
-learning_rate=0.00001
+iterations=500000
+learning_rate=0.000001
 
 
 
