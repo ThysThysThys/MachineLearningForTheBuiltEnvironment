@@ -1,4 +1,4 @@
-import Plotter
+import Plotter_copy
 
 
 # given data
@@ -228,5 +228,4 @@ for iterations in (1000, 5000):
 #print("Error: ", error_func_constant_speed(pzs, ts, v, b))
 
 
-Plotter.plotter(xs,ys,zs)
-
+Plotter_copy.plotter(xs,ys,zs)
