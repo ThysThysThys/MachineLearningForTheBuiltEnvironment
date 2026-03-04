@@ -11,7 +11,7 @@ def plotter(xs,ys,zs,ts):
     x=np.array([2,1.08,-0.83,-1.97,-1.31,0.57])
     y=np.array([0,1.68,1.82,0.28,-1.51,-1.91])
     z=np.array([1,2.38,2.49,2.15,2.59,4.32])
-    t=np.array([1,2,3,4,5,6])
+    t=np.array([1,2,3,4,5,6,7])
     
 
     fig,ax=plt.subplots(subplot_kw={"projection":"3d"},figsize=(8,6))
