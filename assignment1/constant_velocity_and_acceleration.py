@@ -9,8 +9,8 @@ ts = range(1, 7)
 
 # running params
 plot_seventh_point = True
-plot_constant_v = True
-plot_constant_a = True
+do_constant_v = True
+do_constant_a = True
 
 # parameters
 # constant v
@@ -144,106 +144,106 @@ def gradient_descent_axis_quadratic(max_iterations, learning_rate, initial_a, in
     return a, v, b
 
 if __name__ == '__main__':
-    # find best parameter values, strictly looking at the error
-    best_error = 10000000
-    best_xs=[]
-    best_ys=[]
-    best_zs=[]
-    best_vs = []
-    best_bs = []
-    best_iterations = -1
-    best_learning_rate = -1
+    if do_constant_v:
+        # find best parameter values, strictly looking at the error
+        best_error = 10000000
+        best_xs=[]
+        best_ys=[]
+        best_zs=[]
+        best_vs = []
+        best_bs = []
+        best_iterations = -1
+        best_learning_rate = -1
 
-    # gradient descent for constant velocity and plotting results
-    for iterations in iterations_constant_v:
-        for learning_rate in learning_rate_constant_v:
-            # do gradient descent
-            vx, bx = gradient_descent_axis_constant(iterations, learning_rate, initial_v, initial_b, pxs, ts)
-            vy, by = gradient_descent_axis_constant(iterations, learning_rate, initial_v, initial_b, pys, ts)
-            vz, bz = gradient_descent_axis_constant(iterations, learning_rate, initial_v, initial_b, pzs, ts)
+        # gradient descent for constant velocity and plotting results
+        for iterations in iterations_constant_v:
+            for learning_rate in learning_rate_constant_v:
+                # do gradient descent
+                vx, bx = gradient_descent_axis_constant(iterations, learning_rate, initial_v, initial_b, pxs, ts)
+                vy, by = gradient_descent_axis_constant(iterations, learning_rate, initial_v, initial_b, pys, ts)
+                vz, bz = gradient_descent_axis_constant(iterations, learning_rate, initial_v, initial_b, pzs, ts)
 
-            # calculate xyzs and determine SSE
-            x=[]
-            y=[]
-            z=[]
-            for i in ts:
-                x.append(func_constant_speed(vx,i,bx))
-                y.append(func_constant_speed(vy,i,by))
-                z.append(func_constant_speed(vz,i,bz)) 
-            total_error = error_func_constant_speed(pxs, ts, vx, bx) + error_func_constant_speed(pys, ts, vy, by) + error_func_constant_speed(pzs, ts, vz, bz)
-            
-            if total_error < best_error:
-                best_error = total_error
-                best_xs = x
-                best_ys = y
-                best_zs = z
-                best_vs = [vx, vy, vz]
-                best_bs = [bx, by, bz]
-                best_iterations = iterations
-                best_learning_rate = learning_rate
+                # calculate xyzs and determine SSE
+                x=[]
+                y=[]
+                z=[]
+                for i in ts:
+                    x.append(func_constant_speed(vx,i,bx))
+                    y.append(func_constant_speed(vy,i,by))
+                    z.append(func_constant_speed(vz,i,bz)) 
+                total_error = error_func_constant_speed(pxs, ts, vx, bx) + error_func_constant_speed(pys, ts, vy, by) + error_func_constant_speed(pzs, ts, vz, bz)
+                
+                if total_error < best_error:
+                    best_error = total_error
+                    best_xs = x
+                    best_ys = y
+                    best_zs = z
+                    best_vs = [vx, vy, vz]
+                    best_bs = [bx, by, bz]
+                    best_iterations = iterations
+                    best_learning_rate = learning_rate
 
-    print(f"For constant velocity:\nBest error: {best_error}\nBest number of iterations: {iterations}\nBest learning rate: {learning_rate}\nV values per axis: {best_vs}\nB values per axis: {best_bs}\n")
-    if plot_constant_v:
+        print(f"For constant velocity:\nBest error: {best_error}\nBest number of iterations: {iterations}\nBest learning rate: {learning_rate}\nV values per axis: {best_vs}\nB values per axis: {best_bs}\n")
         Plotter.plotter(best_xs, best_ys, best_zs, ts)
 
-    # find best parameter values, strictly looking at the error
-    best_error = 10000000
-    best_xs=[]
-    best_ys=[]
-    best_zs=[]
-    best_as = []
-    best_vs = []
-    best_bs = []
-    best_iterations = -1
-    best_learning_rate = -1
+    if do_constant_a:
+        # find best parameter values, strictly looking at the error
+        best_error = 10000000
+        best_xs=[]
+        best_ys=[]
+        best_zs=[]
+        best_as = []
+        best_vs = []
+        best_bs = []
+        best_iterations = -1
+        best_learning_rate = -1
 
-    # gradient descent for constant acceleration and plotting results
-    for iterations in iterations_constant_a:
-        for learning_rate in learning_rate_constant_a:
-            # do gradient descent
-            ax, vx, bx = gradient_descent_axis_quadratic(
-                iterations, learning_rate, initial_a, initial_v, initial_b, pxs, ts
-            )
-            ay, vy, by = gradient_descent_axis_quadratic(
-                iterations, learning_rate, initial_a, initial_v, initial_b, pys, ts
-            )
-            az, vz, bz = gradient_descent_axis_quadratic(
-                iterations, learning_rate, initial_a, initial_v, initial_b, pzs, ts
-            )
+        # gradient descent for constant acceleration and plotting results
+        for iterations in iterations_constant_a:
+            for learning_rate in learning_rate_constant_a:
+                # do gradient descent
+                ax, vx, bx = gradient_descent_axis_quadratic(
+                    iterations, learning_rate, initial_a, initial_v, initial_b, pxs, ts
+                )
+                ay, vy, by = gradient_descent_axis_quadratic(
+                    iterations, learning_rate, initial_a, initial_v, initial_b, pys, ts
+                )
+                az, vz, bz = gradient_descent_axis_quadratic(
+                    iterations, learning_rate, initial_a, initial_v, initial_b, pzs, ts
+                )
 
-            x = []
-            y = []
-            z = []
-            for i in ts:
-                x.append(func_constant_acc(ax, i, vx, bx))
-                y.append(func_constant_acc(ay, i, vy, by))
-                z.append(func_constant_acc(az, i, vz, bz))
-            total_error = error_func_constant_acc(pxs, ts, ax, vx, bx) + error_func_constant_acc(pys, ts, ay, vy, by) + error_func_constant_acc(pzs, ts, az, vz, bz)
+                x = []
+                y = []
+                z = []
+                for i in ts:
+                    x.append(func_constant_acc(ax, i, vx, bx))
+                    y.append(func_constant_acc(ay, i, vy, by))
+                    z.append(func_constant_acc(az, i, vz, bz))
+                total_error = error_func_constant_acc(pxs, ts, ax, vx, bx) + error_func_constant_acc(pys, ts, ay, vy, by) + error_func_constant_acc(pzs, ts, az, vz, bz)
 
-            if plot_seventh_point:
-                t_next = 7
+                if plot_seventh_point:
+                    t_next = 7
 
-                x7 = func_constant_acc(ax, t_next, vx, bx)
-                y7 = func_constant_acc(ay, t_next, vy, by)
-                z7 = func_constant_acc(az, t_next, vz, bz)
+                    x7 = func_constant_acc(ax, t_next, vx, bx)
+                    y7 = func_constant_acc(ay, t_next, vy, by)
+                    z7 = func_constant_acc(az, t_next, vz, bz)
 
-                x.append(x7)
-                y.append(y7)
-                z.append(z7)
+                    x.append(x7)
+                    y.append(y7)
+                    z.append(z7)
 
-            if total_error < best_error:
-                best_error = total_error
-                best_xs = x
-                best_ys = y
-                best_zs = z
-                best_as = [ax, ay, az]
-                best_vs = [vx, vy, vz]
-                best_bs = [bx, by, bz]
-                best_iterations = iterations
-                best_learning_rate = learning_rate
+                if total_error < best_error:
+                    best_error = total_error
+                    best_xs = x
+                    best_ys = y
+                    best_zs = z
+                    best_as = [ax, ay, az]
+                    best_vs = [vx, vy, vz]
+                    best_bs = [bx, by, bz]
+                    best_iterations = iterations
+                    best_learning_rate = learning_rate
 
-    print(f"For constant acceleration:\nBest error: {best_error}\nBest number of iterations: {iterations}\nBest learning rate: {learning_rate}\nA values per axis: {best_as}\nV values per axis: {best_vs}\nB values per axis: {best_bs}")
-    if plot_constant_a:
+        print(f"For constant acceleration:\nBest error: {best_error}\nBest number of iterations: {iterations}\nBest learning rate: {learning_rate}\nA values per axis: {best_as}\nV values per axis: {best_vs}\nB values per axis: {best_bs}")
         if plot_seventh_point:
             ts = range(1, 8)
         Plotter.plotter(best_xs, best_ys, best_zs, ts)
