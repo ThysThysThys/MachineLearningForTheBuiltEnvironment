@@ -10,12 +10,12 @@ ts = range(1, 7)
 # running params
 plot_seventh_point = True
 do_constant_v = True
-do_constant_a = True
+do_constant_a = False
 
 # parameters
 # constant v
-iterations_constant_v = [1000]
-learning_rate_constant_v = [0.01]
+iterations_constant_v = [100, 500, 1000, 10000]
+learning_rate_constant_v = [0.1, 0.01, 0.001, 0.0001]
 # constant a
 iterations_constant_a = [10000]
 learning_rate_constant_a = [0.0001]
@@ -173,6 +173,8 @@ if __name__ == '__main__':
                     z.append(func_constant_speed(vz,i,bz)) 
                 total_error = error_func_constant_speed(pxs, ts, vx, bx) + error_func_constant_speed(pys, ts, vy, by) + error_func_constant_speed(pzs, ts, vz, bz)
                 
+                #print(f"total error {total_error} for {iterations} iterations and {learning_rate} learning rate")
+
                 if total_error < best_error:
                     best_error = total_error
                     best_xs = x
@@ -183,7 +185,7 @@ if __name__ == '__main__':
                     best_iterations = iterations
                     best_learning_rate = learning_rate
 
-        print(f"For constant velocity:\nBest error: {best_error}\nBest number of iterations: {iterations}\nBest learning rate: {learning_rate}\nV values per axis: {best_vs}\nB values per axis: {best_bs}\n")
+        print(f"For constant velocity:\nBest error: {best_error}\nBest number of iterations: {best_iterations}\nBest learning rate: {best_learning_rate}\nV values per axis: {best_vs}\nB values per axis: {best_bs}\n")
         Plotter.plotter(best_xs, best_ys, best_zs, ts)
 
     if do_constant_a:
@@ -220,6 +222,8 @@ if __name__ == '__main__':
                     y.append(func_constant_acc(ay, i, vy, by))
                     z.append(func_constant_acc(az, i, vz, bz))
                 total_error = error_func_constant_acc(pxs, ts, ax, vx, bx) + error_func_constant_acc(pys, ts, ay, vy, by) + error_func_constant_acc(pzs, ts, az, vz, bz)
+
+                #print(f"total error {total_error} for {iterations} iterations and {learning_rate} learning rate")
 
                 if plot_seventh_point:
                     t_next = 7
