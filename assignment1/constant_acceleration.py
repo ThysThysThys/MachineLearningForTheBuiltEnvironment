@@ -86,68 +86,61 @@ def gradient_descent(y,t,learning_rate,iterations):
     return w_0,w_1,w_2
 
 
-#Calculating weights for respective axes
-w0_x, w1_x, w2_x = gradient_descent(x,t,learning_rate,iterations)
-w0_y, w1_y, w2_y = gradient_descent(y,t,learning_rate,iterations)
-w0_z, w1_z, w2_z = gradient_descent(z,t,learning_rate,iterations)
+if __name__ == '__main__':
+    #Calculating weights for respective axes
+    w0_x, w1_x, w2_x = gradient_descent(x,t,learning_rate,iterations)
+    w0_y, w1_y, w2_y = gradient_descent(y,t,learning_rate,iterations)
+    w0_z, w1_z, w2_z = gradient_descent(z,t,learning_rate,iterations)
 
-print("Respective weights as per axes : ")
-print(f"X Axis: w0={w0_x:.4f}, w1={w1_x:.4f}, w2={w2_x:.4f}")
-print(f"Y Axis: w0={w0_y:.4f}, w1={w1_y:.4f}, w2={w2_y:.4f}")
-print(f"Z Axis: w0={w0_z:.4f}, w1={w1_z:.4f}, w2={w2_z:.4f}")
-
-
-#Calculating Sum of Squared errors
-
-sse_x = SSE(w0_x, w1_x, w2_x, x, t)
-sse_y = SSE(w0_y, w1_y, w2_y, y, t)
-sse_z = SSE(w0_z, w1_z, w2_z, z, t)
-
-print("\n Sum of Squared Errors:")
-print(f"SSE X: {sse_x:.4f}")
-print(f"SSE Y: {sse_y:.4f}")
-print(f"SSE Z: {sse_z:.4f}")
-
-total_sse=sse_x+sse_y+sse_z
-print(f"Total SSE: {total_sse:.4f}")
+    print("Respective weights as per axes : ")
+    print(f"X Axis: w0={w0_x:.4f}, w1={w1_x:.4f}, w2={w2_x:.4f}")
+    print(f"Y Axis: w0={w0_y:.4f}, w1={w1_y:.4f}, w2={w2_y:.4f}")
+    print(f"Z Axis: w0={w0_z:.4f}, w1={w1_z:.4f}, w2={w2_z:.4f}")
 
 
-xs=[]
-ys=[]
-zs=[]
+    #Calculating Sum of Squared errors
+
+    sse_x = SSE(w0_x, w1_x, w2_x, x, t)
+    sse_y = SSE(w0_y, w1_y, w2_y, y, t)
+    sse_z = SSE(w0_z, w1_z, w2_z, z, t)
+
+    print("\n Sum of Squared Errors:")
+    print(f"SSE X: {sse_x:.4f}")
+    print(f"SSE Y: {sse_y:.4f}")
+    print(f"SSE Z: {sse_z:.4f}")
+
+    total_sse=sse_x+sse_y+sse_z
+    print(f"Total SSE: {total_sse:.4f}")
 
 
-for i in t:
-    temp_x = w0_x + w1_x * i + w2_x * pow(i,2)
-    temp_y = w0_y + w1_y * i + w2_y * pow(i,2)
-    temp_z = w0_z + w1_z * i + w2_z * pow(i,2)
+    xs=[]
+    ys=[]
+    zs=[]
+
+
+    for i in t:
+        temp_x = w0_x + w1_x * i + w2_x * pow(i,2)
+        temp_y = w0_y + w1_y * i + w2_y * pow(i,2)
+        temp_z = w0_z + w1_z * i + w2_z * pow(i,2)
+
+        xs.append(temp_x)
+        ys.append(temp_y)
+        zs.append(temp_z)
+
+    #print(xs,"\n",ys,"\n",zs,"\n")
+
+    #Calculation for t=7 seconds
+
+    temp_x = w0_x + w1_x * 7 + w2_x * pow(7,2)
+    temp_y = w0_y + w1_y * 7 + w2_y * pow(7,2)
+    temp_z = w0_z + w1_z * 7 + w2_z * pow(7,2)
+
+    print(f"\n Trajectory Co-ordinates at t = 7 : \n X = {temp_x}\n Y = {temp_y} \n Z = {temp_z}")
 
     xs.append(temp_x)
     ys.append(temp_y)
     zs.append(temp_z)
 
-#print(xs,"\n",ys,"\n",zs,"\n")
-
-#Calculation for t=7 seconds
-
-temp_x = w0_x + w1_x * 7 + w2_x * pow(7,2)
-temp_y = w0_y + w1_y * 7 + w2_y * pow(7,2)
-temp_z = w0_z + w1_z * 7 + w2_z * pow(7,2)
-
-print(f"\n Trajectory Co-ordinates at t = 7 : \n X = {temp_x}\n Y = {temp_y} \n Z = {temp_z}")
-
-xs.append(temp_x)
-ys.append(temp_y)
-zs.append(temp_z)
-
-Plotter.plotter(xs,ys,zs,ts)
-subplot_axis.sub_plotter(xs,ys,zs,ts)
-
-
-
-
-
-
-    
-
+    Plotter.plotter(xs,ys,zs,ts)
+    subplot_axis.sub_plotter(xs,ys,zs,ts)
 
