@@ -19,7 +19,7 @@ learning_rate_constant_v = [0.1, 0.01, 0.001, 0.0001]
 # constant a
 iterations_constant_a = [10000]
 learning_rate_constant_a = [0.0001]
-tolerance = 0.0000001
+tolerance = 0.001
 initial_v = 1
 initial_b = 0
 initial_a = 0
@@ -81,6 +81,7 @@ def gradient_descent_axis_constant(max_iterations, learning_rate, initial_v, ini
         gradient_v = gradient_func_constant_speed_v(ps, ts, v, b)
         gradient_b = gradient_func_constant_speed_b(ps, ts, v, b)
         if abs(gradient_b * learning_rate) < tolerance and abs(gradient_v * learning_rate) < tolerance:
+            print(f"Converged after {i} iterations of {max_iterations} and learning rate {learning_rate}.")
             break
         if abs(gradient_v * learning_rate) > tolerance:
             v = v - learning_rate * gradient_v
