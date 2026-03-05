@@ -1,5 +1,5 @@
 import Plotter
-
+import subplot_axis
 
 # given data
 pxs = [2, 1.08, -0.83, -1.97, -1.31, 0.57]
@@ -205,6 +205,7 @@ if __name__ == '__main__':
         if do_constant_a:
             print("For constant acceleration close graph application\n")
         Plotter.plotter(best_xs, best_ys, best_zs, ts)
+        subplot_axis.sub_plotter(best_xs, best_ys, best_zs, ts)
 
     if do_constant_a:
         print("Running constant acceleration model...\n")
@@ -293,3 +294,4 @@ if __name__ == '__main__':
             ts = range(1, 8)
             print(f"Most likely position drone at t=7: ({x7}, {y7}, {z7})")
         Plotter.plotter(best_xs, best_ys, best_zs, ts)
+        subplot_axis.sub_plotter(best_xs, best_ys, best_zs, ts)
