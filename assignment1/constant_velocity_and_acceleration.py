@@ -16,6 +16,7 @@ do_constant_a = True
 # constant v
 iterations_constant_v = [100, 500, 1000, 750, 10000, 100000]
 learning_rate_constant_v = [0.1, 0.001, 0.01, 0.0001]
+
 # constant a
 iterations_constant_a = [100000, 200000, 500000]
 learning_rate_constant_a = [0.001,  0.0001, 0.00001, 0.000001]
@@ -150,6 +151,7 @@ def gradient_descent_axis_quadratic(max_iterations, learning_rate, initial_a, in
 
 if __name__ == '__main__':
     if do_constant_v:
+        print("Running constant velocity model...\n")
         # find best parameter values, strictly looking at the error
         best_error = 10000000
         best_xs=[]
@@ -162,6 +164,7 @@ if __name__ == '__main__':
         converged_at_x = None
         converged_at_y = None
         converged_at_z = None
+        iterations_needed = None
         iterations_constant_v.sort()
         learning_rate_constant_v.sort()
         # gradient descent for constant velocity and plotting results
@@ -198,9 +201,12 @@ if __name__ == '__main__':
 
 
         print(f"For constant velocity:\nBest error: {best_error}\nBest max iterations: {best_iterations}, {iterations_needed} needed to converge \nBest learning rate: {best_learning_rate}\nv values per axis: {best_vs}\nb values per axis: {best_bs}\n")
+        if do_constant_a:
+            print("For constant acceleration close graph application\n")
         Plotter.plotter(best_xs, best_ys, best_zs, ts)
 
     if do_constant_a:
+        print("Running constant acceleration model...\n")
         # find best parameter values, strictly looking at the error
         best_error = 10000000
         best_xs=[]
