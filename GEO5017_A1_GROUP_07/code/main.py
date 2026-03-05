@@ -269,7 +269,6 @@ if __name__ == '__main__':
                         best_iterations = iterations
                         best_learning_rate = learning_rate
                     else:
-                        iterations_needed = "Reached maximum iterations, not converged"
                         best_error = total_error
                         best_xs = x
                         best_ys = y
