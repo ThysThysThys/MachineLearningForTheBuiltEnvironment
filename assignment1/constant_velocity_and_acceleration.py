@@ -227,6 +227,7 @@ if __name__ == '__main__':
         converged_at_z = None
         iterations_constant_a.sort()
         learning_rate_constant_a.sort()
+        iterations_needed = "Reached maximum iterations, not converged"
         # gradient descent for constant acceleration and plotting results
         for iterations in iterations_constant_a:
             for learning_rate in learning_rate_constant_a:
@@ -293,5 +294,6 @@ if __name__ == '__main__':
         if plot_seventh_point:
             ts = range(1, 8)
             print(f"Most likely position drone at t=7: ({x7}, {y7}, {z7})")
+
         Plotter.plotter(best_xs, best_ys, best_zs, ts)
         subplot_axis.sub_plotter(best_xs, best_ys, best_zs, ts)
