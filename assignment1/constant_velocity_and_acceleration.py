@@ -19,7 +19,7 @@ learning_rate_constant_v = [0.1, 0.001, 0.01, 0.0001]
 
 # constant a
 iterations_constant_a = [100000, 200000, 500000]
-learning_rate_constant_a = [0.001,  0.0001, 0.00001, 0.000001]
+learning_rate_constant_a = [0.0001, 0.00001, 0.000001]
 tolerance = 0.0000001
 initial_v = 1
 initial_b = 0
@@ -164,7 +164,7 @@ if __name__ == '__main__':
         converged_at_x = None
         converged_at_y = None
         converged_at_z = None
-        iterations_needed = None
+        iterations_needed = "Reached maximum iterations, not converged"
         iterations_constant_v.sort()
         learning_rate_constant_v.sort()
         # gradient descent for constant velocity and plotting results
@@ -197,10 +197,11 @@ if __name__ == '__main__':
                     best_iterations = iterations
                     best_learning_rate = learning_rate
                     if converged_at_x is not None and converged_at_y is not None and converged_at_z is not None:
-                        iterations_needed = max(converged_at_x, converged_at_y, converged_at_z)
+                        iter = max(converged_at_x, converged_at_y, converged_at_z)
+                        iterations_needed = f'{iter} needed to converge'
 
 
-        print(f"For constant velocity:\nBest error: {best_error}\nBest max iterations: {best_iterations}, {iterations_needed} needed to converge \nBest learning rate: {best_learning_rate}\nv values per axis: {best_vs}\nb values per axis: {best_bs}\n")
+        print(f"For constant velocity:\nBest error: {best_error}\nBest max iterations: {best_iterations}, {iterations_needed}\nBest learning rate: {best_learning_rate}\nv values per axis: {best_vs}\nb values per axis: {best_bs}\n")
         if do_constant_a:
             print("For constant acceleration close graph application\n")
         Plotter.plotter(best_xs, best_ys, best_zs, ts)
@@ -254,7 +255,8 @@ if __name__ == '__main__':
 
                 if total_error < best_error:
                     if converged_at_x is not None and converged_at_y is not None and converged_at_z is not None:
-                        iterations_needed = max(converged_at_x, converged_at_y, converged_at_z)
+                        iter = max(converged_at_x, converged_at_y, converged_at_z)
+                        iterations_needed = f'{iter} needed to converge'
                         best_error = total_error
                         best_xs = x
                         best_ys = y
@@ -264,7 +266,17 @@ if __name__ == '__main__':
                         best_bs = [bx, by, bz]
                         best_iterations = iterations
                         best_learning_rate = learning_rate
-
+                    else:
+                        iterations_needed = "Reached maximum iterations, not converged"
+                        best_error = total_error
+                        best_xs = x
+                        best_ys = y
+                        best_zs = z
+                        best_as = [ax, ay, az]
+                        best_vs = [vx, vy, vz]
+                        best_bs = [bx, by, bz]
+                        best_iterations = iterations
+                        best_learning_rate = learning_rate
                     if plot_seventh_point:
                         t_next = 7
 
@@ -276,7 +288,7 @@ if __name__ == '__main__':
                         y.append(y7)
                         z.append(z7)
 
-        print(f"For constant acceleration:\nBest error: {best_error}\nBest max iterations: {best_iterations}, {iterations_needed} needed to converge \nBest learning rate: {best_learning_rate}\na values per axis: {best_as}\nv values per axis: {best_vs}\nb values per axis: {best_bs}\n")
+        print(f"For constant acceleration:\nBest error: {best_error}\nBest max iterations: {best_iterations}, {iterations_needed} \nBest learning rate: {best_learning_rate}\na values per axis: {best_as}\nv values per axis: {best_vs}\nb values per axis: {best_bs}\n")
         if plot_seventh_point:
             ts = range(1, 8)
             print(f"Most likely position drone at t=7: ({x7}, {y7}, {z7})")
