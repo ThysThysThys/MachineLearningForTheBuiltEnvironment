@@ -177,8 +177,19 @@ def feature_selection(features, labels):
     js = sbs / sws
     best_features = np.argpartition(js, -4)[-4:]
     best_features = np.sort(best_features)
-    return best_features
+    return features[:,best_features]
 
+def normalise_features(features):
+    """
+        Normalises the features
+        Returns the normalised features
+    """
+    num_features = len(features[0])
+    for f in range(num_features):
+        feature = features[:,f]
+        norm_feature = (feature - np.min(feature)) / (np.max(feature) - np.min(feature))
+        features[:, f] = norm_feature
+    return features
 
 def read_xyz(filenm):
     """
@@ -264,16 +275,17 @@ def feature_visualization(X):
     colors = ['firebrick', 'grey', 'darkorange', 'dodgerblue', 'olivedrab']
     labels = ['building', 'car', 'fence', 'pole', 'tree']
 
+    print(np.shape(X))
     # plot the data with first two features
     for i in range(5):
-        ax.scatter(X[100*i:100*(i+1), 3], X[100*i:100*(i+1), 4], marker="o", c=colors[i], edgecolor="k", label=labels[i])
+        ax.scatter(X[100*i:100*(i+1), 2], X[100*i:100*(i+1), 3], marker="o", c=colors[i], edgecolor="k", label=labels[i])
 
     # show the figure with labels
     """
     Replace the axis labels with your own feature names
     """
-    ax.set_xlabel('x1:root density')
-    ax.set_ylabel('x2:area')
+    ax.set_xlabel('x1:?')
+    ax.set_ylabel('x2:?')
     ax.legend()
     plt.show()
 
@@ -316,6 +328,10 @@ if __name__=='__main__':
     # load the data
     print('Start loading data from the local file')
     ID, X, y = data_loading()
+
+    # normalise data
+    print("Normalising data")
+    X = normalise_features(X)
 
     # select features
     print("Selecting features")
