@@ -139,6 +139,46 @@ class urban_object:
         self.feature += [linearity, sphericity, planarity, verticality, hull_area, relative_height]
 
 
+def feature_selection(features, labels):
+    """
+        Selects best features from among all given features
+        Returns only the best four features from among the given input
+    """
+    num_classes = 5
+    num_samples = len(features)
+    num_features = len(features[0])
+
+    # calculate within class scatter matrix SW per feature
+    sws = np.array([])
+    for f in range(num_features):
+        for c in range(num_classes):
+            num_samples_class = np.sum(labels==c)
+            feature_cov = np.cov(features[labels==c,f])
+            if f == 0:
+                sw = np.zeros_like(feature_cov)
+            sw += (float(num_samples_class) / num_samples * feature_cov)
+        #sw = np.trace(sw)
+        sws = np.append(sws, sw)
+    
+    # calculate between class scatter matrix SB per feature
+    sbs = np.array([])
+    for f in range(num_features):
+        mean_global = np.mean(features[:,f])
+        for c in range(num_classes):
+            num_samples_class = np.sum(labels==c)
+            mean_class = np.mean(features[labels==c,f])
+            if f == 0:
+                sb = 0
+            sb += (float(num_samples_class) / num_samples * (mean_class - mean_global) * (mean_class - mean_global))
+        #sb = np.trace(sb)
+        sbs = np.append(sbs, sb)
+
+    # calculate J and keep only best four features based on it
+    js = sbs / sws
+    best_features = np.argpartition(js, -4)[-4:]
+    best_features = np.sort(best_features)
+    return best_features
+
 
 def read_xyz(filenm):
     """
@@ -276,6 +316,10 @@ if __name__=='__main__':
     # load the data
     print('Start loading data from the local file')
     ID, X, y = data_loading()
+
+    # select features
+    print("Selecting features")
+    X = feature_selection(X, y)
 
     # visualize features
     print('Visualize the features')
