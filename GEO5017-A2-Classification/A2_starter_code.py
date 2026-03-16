@@ -45,7 +45,7 @@ class urban_object:
     def compute_features(self):
         """
         Compute the features, here we provide two example features. You're encouraged to design your own features
-        """
+        
         # calculate the height
         height = np.amax(self.points[:, 2])
         self.feature.append(height)
@@ -89,6 +89,55 @@ class urban_object:
         linearity = (w[2]-w[1]) / (w[2] + 1e-5)
         sphericity = w[0] / (w[2] + 1e-5)
         self.feature += [linearity, sphericity]
+        """
+
+        
+        kd_tree_3d = KDTree(self.points, leaf_size=5)
+        
+        k_top = max(int(len(self.points) * 0.005), 100)
+
+        top = self.points[[np.argmax(self.points[:, 2])]]
+
+        idx = kd_tree_3d.query(top, k=k_top, return_distance=False)
+
+        idx = np.squeeze(idx, axis=0)
+
+        neighbours = self.points[idx, :]
+
+        cov = np.cov(neighbours.T)
+
+        w, v = np.linalg.eig(cov)
+
+        w.sort()
+
+        #Feature 1 : Linearity
+        linearity = (w[2]-w[1]) / (w[2] + 1e-5)
+
+        #Feature 2 : Sphericity
+        sphericity = w[0] / (w[2] + 1e-5)
+
+        #Feature 3 : Planarity
+        planarity = (w[1] - w[0] )/( w[2] + 1e-5)
+
+        #Feature 4: Verticality
+        idx = w.argsort()[::-1] 
+        v = v[:, idx]
+        e1, e2, e3 = v[:, 0], v[:, 1], v[:, 2]
+        z_axis = np.array([0, 0, 1])
+        verticality = 1 - np.abs(np.dot(e3, z_axis))
+
+        #Featue 5: Area 
+        hull_2d = ConvexHull(self.points[:, :2])
+        hull_area = hull_2d.volume
+
+        #Feature 6: Relative Z height
+        height_max = np.amax(self.points[:, 2])
+        height_min = np.amin(self.points[:, 2])
+
+        relative_height = height_max-height_min
+
+        self.feature += [linearity, sphericity, planarity, verticality, hull_area, relative_height]
+
 
 
 def read_xyz(filenm):
@@ -218,7 +267,7 @@ def RF_classification(X, y):
 if __name__=='__main__':
     # specify the data folder
     """"Here you need to specify your own path"""
-    path = '../Data/pointclouds'
+    path = 'GEO5017-A2-Classification/pointclouds-500'
 
     # conduct feature preparation
     print('Start preparing features')
@@ -239,3 +288,5 @@ if __name__=='__main__':
     # RF classification
     print('Start RF classification')
     RF_classification(X, y)
+
+
