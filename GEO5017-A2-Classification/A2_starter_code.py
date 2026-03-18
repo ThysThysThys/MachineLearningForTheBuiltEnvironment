@@ -317,7 +317,10 @@ def SVM_classification(X, y):
         y: labels
     """
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
-    clf = svm.SVC()
+    
+    #Hyperparameter tuning
+    clf = svm.SVC(kernel='sigmoid')
+    
     clf.fit(X_train, y_train)
     y_preds = clf.predict(X_test)
     acc = accuracy_score(y_test, y_preds)
@@ -337,7 +340,10 @@ def RF_classification(X, y):
         y: labels
     """
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
-    clf = RandomForestClassifier()
+
+    #Hyperparameter tuning
+    clf = RandomForestClassifier(criterion='gini',max_samples=50,bootstrap=True)
+    
     clf.fit(X_train, y_train)
     y_preds = clf.predict(X_test)
     acc = accuracy_score(y_test, y_preds)
