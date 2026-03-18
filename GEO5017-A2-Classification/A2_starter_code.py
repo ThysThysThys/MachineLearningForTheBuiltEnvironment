@@ -368,7 +368,6 @@ def learning_curve(X,y):
         rf_acc.append(acc)
 
 
-    
     fig, ax = plt.subplots()
 
     ax.plot(sample_size, svm_acc, marker='o', label='SVM')
