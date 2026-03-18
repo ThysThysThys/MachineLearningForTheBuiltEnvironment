@@ -12,11 +12,13 @@ import numpy as np
 from sklearn.neighbors import KDTree
 from sklearn import svm
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import ConfusionMatrixDisplay
 from scipy.spatial import ConvexHull
 from tqdm import tqdm
 from os.path import exists, join
 from os import listdir
+from sklearn.ensemble import RandomForestClassifier
 
 
 class urban_object:
@@ -44,54 +46,16 @@ class urban_object:
 
     def compute_features(self):
         """
-        Compute the features, here we provide two example features. You're encouraged to design your own features
-        
-        # calculate the height
-        height = np.amax(self.points[:, 2])
-        self.feature.append(height)
+        Computing the features for the pointcloud dataset
 
-        # get the root point and top point
-        root = self.points[[np.argmin(self.points[:, 2])]]
-        top = self.points[[np.argmax(self.points[:, 2])]]
-
-        # construct the 2D and 3D kd tree
-        kd_tree_2d = KDTree(self.points[:, :2], leaf_size=5)
-        kd_tree_3d = KDTree(self.points, leaf_size=5)
-
-        # compute the root point planar density
-        radius_root = 0.2
-        count = kd_tree_2d.query_radius(root[:, :2], r=radius_root, count_only=True)
-        root_density = 1.0*count[0] / len(self.points)
-        self.feature.append(root_density)
-
-        # compute the 2D footprint and calculate its area
-        hull_2d = ConvexHull(self.points[:, :2])
-        hull_area = hull_2d.volume
-        self.feature.append(hull_area)
-
-        # get the hull shape index
-        hull_perimeter = hull_2d.area
-        shape_index = 1.0 * hull_area / hull_perimeter
-        self.feature.append(shape_index)
-
-        # obtain the point cluster near the top area
-        k_top = max(int(len(self.points) * 0.005), 100)
-        idx = kd_tree_3d.query(top, k=k_top, return_distance=False)
-        idx = np.squeeze(idx, axis=0)
-        neighbours = self.points[idx, :]
-
-        # obtain the covariance matrix of the top points
-        cov = np.cov(neighbours.T)
-        w, _ = np.linalg.eig(cov)
-        w.sort()
-
-        # calculate the linearity and sphericity
-        linearity = (w[2]-w[1]) / (w[2] + 1e-5)
-        sphericity = w[0] / (w[2] + 1e-5)
-        self.feature += [linearity, sphericity]
+        Features taken into account :
+            - Linearity
+            - Sphericity
+            - Planarity
+            - Verticality
+            - Area
+            - Relative Z height
         """
-
-        
         kd_tree_3d = KDTree(self.points, leaf_size=5)
         
         k_top = max(int(len(self.points) * 0.005), 100)
@@ -122,7 +86,7 @@ class urban_object:
         #Feature 4: Verticality
         idx = w.argsort()[::-1] 
         v = v[:, idx]
-        e1, e2, e3 = v[:, 0], v[:, 1], v[:, 2]
+        e1, e2, e3 = v[:, 0], v[:, 1], v[:, 2]  # noqa: F841
         z_axis = np.array([0, 0, 1])
         verticality = 1 - np.abs(np.dot(e3, z_axis))
 
@@ -143,6 +107,14 @@ def feature_selection(features, labels):
     """
         Selects best features from among all given features
         Returns only the best four features from among the given input
+
+        Input: 
+            - Features
+            - Labels
+        
+        Output:
+        Best Four Features
+
     """
     num_classes = 5
     num_samples = len(features)
@@ -177,7 +149,7 @@ def feature_selection(features, labels):
     js = sbs / sws
     best_features = np.argpartition(js, -4)[-4:]
     best_features = np.sort(best_features)
-    return features[:,best_features]
+    return features[:,best_features],best_features
 
 def normalise_features(features):
     """
@@ -209,7 +181,7 @@ def read_xyz(filenm):
 def feature_preparation(data_path):
     """
     Prepare features of the input point cloud objects
-        data_path: the path to read data
+    data_path: the path to read data
     """
     # check if the current data file exist
     data_file = 'data.txt'
@@ -241,7 +213,7 @@ def feature_preparation(data_path):
     outputs = np.array(input_data).astype(np.float32)
 
     # write the output to a local file
-    data_header = 'ID,label,height,root_density,area,shape_index,linearity,sphericity'
+    data_header = 'ID,label,Linearity,Sphericity,Planarity,Verticality,Hull Area,Relative Height'
     np.savetxt(data_file, outputs, fmt='%10.5f', delimiter=',', newline='\n', header=data_header)
 
 
@@ -261,7 +233,7 @@ def data_loading(data_file='data.txt'):
     return ID, X, y
 
 
-def feature_visualization(X):
+def feature_visualization(bf,X):
     """
     Visualize the features
         X: input features. This assumes classes are stored in a sequential manner
@@ -269,7 +241,7 @@ def feature_visualization(X):
     # initialize a plot
     fig = plt.figure()
     ax = fig.add_subplot()
-    plt.title("feature subset visualization of 5 classes", fontsize="small")
+    plt.title("Feature subset visualization of 5 classes", fontsize="small")
 
     # define the labels and corresponding colors
     colors = ['firebrick', 'grey', 'darkorange', 'dodgerblue', 'olivedrab']
@@ -281,13 +253,61 @@ def feature_visualization(X):
         ax.scatter(X[100*i:100*(i+1), 2], X[100*i:100*(i+1), 3], marker="o", c=colors[i], edgecolor="k", label=labels[i])
 
     # show the figure with labels
+
+    feature_names={
+        0:"Linearity",
+        1:"Sphericity",
+        2:"Planarity",
+        3:"Verticality",
+        4:"Area",
+        5:"Relative Height"
+    }
+
+    a=feature_names[bf[0]]
+    b=feature_names[bf[1]]
+
     """
     Replace the axis labels with your own feature names
     """
-    ax.set_xlabel('x1:?')
-    ax.set_ylabel('x2:?')
+    ax.set_xlabel(f'x1: {a}')
+    ax.set_ylabel(f'x2: {b}')
     ax.legend()
     plt.show()
+
+def confusion_matrix_display(flag,classifier,X_test,y_test):
+
+    np.set_printoptions(precision=2)
+    # Plot non-normalized confusion matrix
+    if flag==0:
+        titles_options = [
+            ("SVM Confusion Matrix: Non-Normalised", None),
+            ("SVM Confusion Matrix: Normalised", "true"),
+        ]
+    
+    else:
+        titles_options = [
+            ("RF Confusion Matrix: Non-Normalised", None),
+            ("RF Confusion matrix: Normalised", "true"),
+        ]
+
+
+    class_names=["Building","Car","Fence","Pole","Tree"]
+    for title, normalize in titles_options:
+        disp = ConfusionMatrixDisplay.from_estimator(
+            classifier,
+            X_test,
+            y_test,
+            display_labels=class_names,
+            cmap=plt.cm.Blues,
+            normalize=normalize,
+        )
+        disp.ax_.set_title(title)
+
+        #print(title)
+        #print(disp.confusion_matrix)
+
+    plt.show()
+
 
 
 def SVM_classification(X, y):
@@ -302,9 +322,12 @@ def SVM_classification(X, y):
     y_preds = clf.predict(X_test)
     acc = accuracy_score(y_test, y_preds)
     print("SVM accuracy: %5.2f" % acc)
-    print("confusion matrix")
-    conf = confusion_matrix(y_test, y_preds)
-    print(conf)
+    #print("confusion matrix")
+    #conf = confusion_matrix(y_test, y_preds)
+    #print(conf)
+    print("Visualise the Confusion Matrix")
+    flag=0
+    confusion_matrix_display(flag=flag,classifier=clf,X_test=X_test,y_test=y_test)
 
 
 def RF_classification(X, y):
@@ -313,7 +336,55 @@ def RF_classification(X, y):
         X: features
         y: labels
     """
-    pass
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
+    clf = RandomForestClassifier()
+    clf.fit(X_train, y_train)
+    y_preds = clf.predict(X_test)
+    acc = accuracy_score(y_test, y_preds)
+    print("Random Forest accuracy: %5.2f" % acc)
+    print("Visualise the Confusion Matrix : Random Forest")
+    flag=1
+    confusion_matrix_display(flag=flag,classifier=clf,X_test=X_test,y_test=y_test)
+
+def learning_curve(X,y):
+
+    test_size_split=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+    sample_size=[]
+    svm_acc=[]
+    rf_acc=[]
+
+    for i in test_size_split:
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=i)
+        sample_size.append(len(X_train))
+        clf_svm = svm.SVC()
+        clf_rf = RandomForestClassifier()
+        clf_svm.fit(X_train, y_train)
+        clf_rf.fit(X_train, y_train)
+        y_preds_svm = clf_svm.predict(X_test)
+        acc = accuracy_score(y_test, y_preds_svm)
+        svm_acc.append(acc)
+        y_preds_rf = clf_rf.predict(X_test)
+        acc = accuracy_score(y_test, y_preds_rf)
+        rf_acc.append(acc)
+
+
+    
+    fig, ax = plt.subplots()
+
+    ax.plot(sample_size, svm_acc, marker='o', label='SVM')
+    ax.plot(sample_size, rf_acc, marker='s', label='Random Forest')
+
+    ax.set_title("Learning Curve")
+    ax.set_xlabel("Training Sample Size")
+    ax.set_ylabel("Accuracy")
+
+    #Accuracy Range
+    ax.set_ylim(0, 1) 
+    ax.grid(True)
+    ax.legend()
+
+    plt.show()
+    
 
 
 if __name__=='__main__':
@@ -335,11 +406,11 @@ if __name__=='__main__':
 
     # select features
     print("Selecting features")
-    X = feature_selection(X, y)
+    X , best_features= feature_selection(X, y)
 
     # visualize features
     print('Visualize the features')
-    feature_visualization(X=X)
+    feature_visualization(best_features,X=X)
 
     # SVM classification
     print('Start SVM classification')
@@ -348,5 +419,6 @@ if __name__=='__main__':
     # RF classification
     print('Start RF classification')
     RF_classification(X, y)
+    learning_curve(X,y)
 
 
