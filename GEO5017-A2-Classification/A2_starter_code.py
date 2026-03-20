@@ -94,13 +94,21 @@ class urban_object:
         hull_2d = ConvexHull(self.points[:, :2])
         hull_area = hull_2d.volume
 
-        #Feature 6: Relative Z height
+        # Feature 6: Shape Index
+        hull_perimeter = hull_2d.area
+        shape_index = 1.0 * hull_area / hull_perimeter
+        
+        #Feature 7: Relative Z height
         height_max = np.amax(self.points[:, 2])
         height_min = np.amin(self.points[:, 2])
 
         relative_height = height_max-height_min
 
-        self.feature += [linearity, sphericity, planarity, verticality, hull_area, relative_height]
+        #Feature 8: Curvature Change
+        cur_change = w[0]/(w[0]+w[1]+w[2])
+
+
+        self.feature += [linearity, sphericity, planarity, verticality, hull_area, shape_index,relative_height,cur_change]
 
 
 def feature_selection(features, labels):
@@ -213,7 +221,7 @@ def feature_preparation(data_path):
     outputs = np.array(input_data).astype(np.float32)
 
     # write the output to a local file
-    data_header = 'ID,label,Linearity,Sphericity,Planarity,Verticality,Hull Area,Relative Height'
+    data_header = 'ID,label,Linearity,Sphericity,Planarity,Verticality,Hull Area,Shape index,Relative Height,Curvature Change'
     np.savetxt(data_file, outputs, fmt='%10.5f', delimiter=',', newline='\n', header=data_header)
 
 
@@ -260,7 +268,9 @@ def feature_visualization(bf,X):
         2:"Planarity",
         3:"Verticality",
         4:"Area",
-        5:"Relative Height"
+        5:"Shape Index",
+        6:"Relative Height",
+        7:"Curvature Change"
     }
 
     a=feature_names[bf[0]]
@@ -319,7 +329,7 @@ def SVM_classification(X, y):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
     
     #Hyperparameter tuning
-    clf = svm.SVC(kernel='sigmoid')
+    clf = svm.SVC()
     
     clf.fit(X_train, y_train)
     y_preds = clf.predict(X_test)
@@ -411,7 +421,8 @@ if __name__=='__main__':
 
     # select features
     print("Selecting features")
-    X , best_features= feature_selection(X, y)
+    X , best_features = feature_selection(X, y)
+    print(best_features)
 
     # visualize features
     print('Visualize the features')
