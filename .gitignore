@@ -1,3 +1,7 @@
 __pycache__/
 *.txt
 Dataset/
+Test_data/
+Code/
+Annoted_Dataset/
+GEO5017-A3-UrbanWaste/
