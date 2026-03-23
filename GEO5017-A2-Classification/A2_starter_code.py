@@ -111,65 +111,91 @@ class urban_object:
         self.feature += [linearity, sphericity, planarity, verticality, hull_area, shape_index,relative_height,cur_change]
 
 
-def feature_selection(features, labels):
+def feature_selection(features, labels, d=4):
     """
-        Selects best features from among all given features
-        Returns only the best four features from among the given input
+    Forward selection using Fisher criterion:
+    J = trace(SB) / trace(SW)
 
-        Input: 
-            - Features
-            - Labels
-        
-        Output:
-        Best Four Features
-
+    Selects d features step by step and returns:
+        - reduced feature matrix
+        - selected feature indices
     """
-    num_classes = 5
-    num_samples = len(features)
-    num_features = len(features[0])
+    num_samples = features.shape[0]
+    num_features = features.shape[1]
+    classes = np.unique(labels)
 
-    # calculate within class scatter matrix SW per feature
-    sws = np.array([])
-    for f in range(num_features):
-        for c in range(num_classes):
-            num_samples_class = np.sum(labels==c)
-            feature_cov = np.cov(features[labels==c,f])
-            if f == 0:
-                sw = np.zeros_like(feature_cov)
-            sw += (float(num_samples_class) / num_samples * feature_cov)
-        #sw = np.trace(sw)
-        sws = np.append(sws, sw)
-    
-    # calculate between class scatter matrix SB per feature
-    sbs = np.array([])
-    for f in range(num_features):
-        mean_global = np.mean(features[:,f])
-        for c in range(num_classes):
-            num_samples_class = np.sum(labels==c)
-            mean_class = np.mean(features[labels==c,f])
-            if f == 0:
-                sb = 0
-            sb += (float(num_samples_class) / num_samples * (mean_class - mean_global) * (mean_class - mean_global))
-        #sb = np.trace(sb)
-        sbs = np.append(sbs, sb)
+    def fisher_score(feature_idx):
+        """
+        Compute J for a subset of features.
+        """
+        X = features[:, feature_idx]
 
-    # calculate J and keep only best four features based on it
-    js = sbs / sws
-    best_features = np.argpartition(js, -4)[-4:]
-    best_features = np.sort(best_features)
-    return features[:,best_features],best_features
+        # ensure 2D shape
+        if X.ndim == 1:
+            X = X.reshape(-1, 1)
 
-def normalise_features(features):
-    """
-        Normalises the features
-        Returns the normalised features
-    """
-    num_features = len(features[0])
-    for f in range(num_features):
-        feature = features[:,f]
-        norm_feature = (feature - np.min(feature)) / (np.max(feature) - np.min(feature))
-        features[:, f] = norm_feature
-    return features
+        mean_global = np.mean(X, axis=0)
+
+        SW = np.zeros((X.shape[1], X.shape[1]), dtype=np.float64)
+        SB = np.zeros((X.shape[1], X.shape[1]), dtype=np.float64)
+
+        for c in classes:
+            Xc = X[labels == c]
+            Nc = Xc.shape[0]
+
+            if Nc == 0:
+                continue
+
+            mean_class = np.mean(Xc, axis=0)
+
+            # within-class scatter
+            centered = Xc - mean_class
+            SW += (centered.T @ centered) / num_samples
+
+            # between-class scatter
+            mean_diff = (mean_class - mean_global).reshape(-1, 1)
+            SB += (Nc / num_samples) * (mean_diff @ mean_diff.T)
+
+        return np.trace(SB) / (np.trace(SW) + 1e-12)
+
+    selected_features = []
+    remaining_features = list(range(num_features))
+
+    while len(selected_features) < d:
+        best_feature = None
+        best_score = -np.inf
+
+        for f in remaining_features:
+            candidate_subset = selected_features + [f]
+            score = fisher_score(candidate_subset)
+
+            print(f"Testing subset {candidate_subset} -> J = {score:.6f}")
+
+            if score > best_score:
+                best_score = score
+                best_feature = f
+
+        selected_features.append(best_feature)
+        remaining_features.remove(best_feature)
+
+        print(
+            f"Selected feature {best_feature}, "
+            f"current subset = {selected_features}, "
+            f"J = {best_score:.6f}\n"
+        )
+
+    selected_features = np.array(selected_features)
+    return features[:, selected_features], selected_features
+
+def normalise_features(X_train, X_test):
+    min_vals = np.min(X_train, axis=0)
+    max_vals = np.max(X_train, axis=0)
+    denom = (max_vals - min_vals) + 1e-12
+
+    X_train = (X_train - min_vals) / denom
+    X_test = (X_test - min_vals) / denom
+
+    return X_train, X_test
 
 def read_xyz(filenm):
     """
@@ -241,7 +267,7 @@ def data_loading(data_file='data.txt'):
     return ID, X, y
 
 
-def feature_visualization(bf,X):
+def feature_visualization(bf, X, y):
     """
     Visualize the features
         X: input features. This assumes classes are stored in a sequential manner
@@ -258,10 +284,17 @@ def feature_visualization(bf,X):
     print(np.shape(X))
     # plot the data with first two features
     for i in range(5):
-        ax.scatter(X[100*i:100*(i+1), 2], X[100*i:100*(i+1), 3], marker="o", c=colors[i], edgecolor="k", label=labels[i])
+        mask = (y == i)
+        ax.scatter(
+            X[mask, 0],
+            X[mask, 1],
+            marker="o",
+            c=colors[i],
+            edgecolor="k",
+            label=labels[i]
+        )
 
     # show the figure with labels
-
     feature_names={
         0:"Linearity",
         1:"Sphericity",
@@ -320,92 +353,190 @@ def confusion_matrix_display(flag,classifier,X_test,y_test):
 
 
 
-def SVM_classification(X, y):
+def SVM_classification(X_train, X_test, y_train, y_test):
     """
-    Conduct SVM classification
-        X: features
-        y: labels
+    Conduct SVM classification with kernel and hyperparameter comparison
+    on a precomputed train/test split.
     """
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
-    
-    #Hyperparameter tuning
-    clf = svm.SVC()
-    
-    clf.fit(X_train, y_train)
-    y_preds = clf.predict(X_test)
-    acc = accuracy_score(y_test, y_preds)
-    print("SVM accuracy: %5.2f" % acc)
-    #print("confusion matrix")
-    #conf = confusion_matrix(y_test, y_preds)
-    #print(conf)
+    kernels = ['linear', 'poly', 'rbf', 'sigmoid']
+    C_values = [0.01, 0.1, 1, 10]
+    gamma_values = ['scale', 0.01, 0.1, 1]
+
+    results = []
+
+    best_acc = -1
+    best_params = None
+    best_clf = None
+
+    for kernel in kernels:
+        for C in C_values:
+
+            if kernel == 'linear':
+                clf = svm.SVC(kernel=kernel, C=C)
+
+                clf.fit(X_train, y_train)
+                y_pred = clf.predict(X_test)
+                acc = accuracy_score(y_test, y_pred)
+
+                results.append((kernel, C, None, acc))
+                print(f"SVM kernel={kernel:<8} C={C:<6} accuracy={acc:.5f}")
+
+                if acc > best_acc:
+                    best_acc = acc
+                    best_params = {'kernel': kernel, 'C': C}
+                    best_clf = clf
+
+            else:
+                for gamma in gamma_values:
+                    clf = svm.SVC(kernel=kernel, C=C, gamma=gamma)
+
+                    clf.fit(X_train, y_train)
+                    y_pred = clf.predict(X_test)
+                    acc = accuracy_score(y_test, y_pred)
+
+                    results.append((kernel, C, gamma, acc))
+                    print(f"SVM kernel={kernel:<8} C={C:<6} gamma={str(gamma):<6} accuracy={acc:.5f}")
+
+                    if acc > best_acc:
+                        best_acc = acc
+                        best_params = {'kernel': kernel, 'C': C, 'gamma': gamma}
+                        best_clf = clf
+
+    print("\nBest SVM params:", best_params)
+    print(f"Best SVM accuracy: {best_acc:.5f}")
     print("Visualise the Confusion Matrix")
-    flag=0
-    confusion_matrix_display(flag=flag,classifier=clf,X_test=X_test,y_test=y_test)
+    flag = 0
+    confusion_matrix_display(flag=flag, classifier=best_clf, X_test=X_test, y_test=y_test)
+
+    return best_clf, results, best_params, best_acc
 
 
-def RF_classification(X, y):
+def RF_classification(X_train, X_test, y_train, y_test):
     """
-    Conduct RF classification
-        X: features
-        y: labels
+    Conduct RF classification with hyperparameter comparison
+    on a precomputed train/test split.
     """
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
+    n_estimators_values = [50, 100, 200]
+    max_depth_values = [5, 10, 20]
+    max_features_values = ['sqrt', 'log2']
 
-    #Hyperparameter tuning
-    clf = RandomForestClassifier(criterion='gini',max_samples=50,bootstrap=True)
-    
-    clf.fit(X_train, y_train)
-    y_preds = clf.predict(X_test)
-    acc = accuracy_score(y_test, y_preds)
-    print("Random Forest accuracy: %5.2f" % acc)
-    print("Visualise the Confusion Matrix : Random Forest")
-    flag=1
-    confusion_matrix_display(flag=flag,classifier=clf,X_test=X_test,y_test=y_test)
+    results = []
 
-def learning_curve(X,y):
+    best_acc = -1
+    best_params = None
+    best_clf = None
 
-    test_size_split=[0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
-    sample_size=[]
-    svm_acc=[]
-    rf_acc=[]
+    for n_estimators in n_estimators_values:
+        for max_depth in max_depth_values:
+            for max_features in max_features_values:
+                clf = RandomForestClassifier(
+                    n_estimators=n_estimators,
+                    max_depth=max_depth,
+                    max_features=max_features,
+                    random_state=42
+                )
 
-    for i in test_size_split:
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=i)
-        sample_size.append(len(X_train))
-        clf_svm = svm.SVC()
-        clf_rf = RandomForestClassifier()
-        clf_svm.fit(X_train, y_train)
-        clf_rf.fit(X_train, y_train)
-        y_preds_svm = clf_svm.predict(X_test)
-        acc = accuracy_score(y_test, y_preds_svm)
-        svm_acc.append(acc)
-        y_preds_rf = clf_rf.predict(X_test)
-        acc = accuracy_score(y_test, y_preds_rf)
-        rf_acc.append(acc)
+                clf.fit(X_train, y_train)
+                y_pred = clf.predict(X_test)
+                acc = accuracy_score(y_test, y_pred)
 
+                results.append((n_estimators, max_depth, max_features, acc))
 
+                print(
+                    f"RF n_estimators={n_estimators:<3} "
+                    f"max_depth={str(max_depth):<4} "
+                    f"max_features={str(max_features):<5} "
+                    f"accuracy={acc:.5f}"
+                )
+
+                if acc > best_acc:
+                    best_acc = acc
+                    best_params = {
+                        'n_estimators': n_estimators,
+                        'max_depth': max_depth,
+                        'max_features': max_features
+                    }
+                    best_clf = clf
+
+    print("\nBest RF params:", best_params)
+    print(f"Best RF accuracy: {best_acc:.5f}")
+
+    print("Visualise the Confusion Matrix")
+    flag = 0
+    confusion_matrix_display(flag=flag, classifier=best_clf, X_test=X_test, y_test=y_test)
+
+    return best_clf, results, best_params, best_acc
+
+def learning_curve(X, y, best_features, svm_best_params, rf_best_params):
+    """
+    Learning curve for the final selected models.
+    """
+
+    test_size_split = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+
+    sample_size = []
+    svm_acc = []
+    rf_acc = []
+    svm_train_acc = []
+    rf_train_acc = []
+
+    for test_size in test_size_split:
+        # split
+        X_train_raw, X_test_raw, y_train, y_test = train_test_split(
+            X, y,
+            test_size=test_size,
+        )
+
+        sample_size.append(len(X_train_raw))
+        X_train, X_test = normalise_features(X_train_raw, X_test_raw)
+
+        # apply fixed selected features
+        X_train_sel = X_train[:, best_features]
+        X_test_sel = X_test[:, best_features]
+
+        # --- SVM with BEST params ---
+        clf_svm = svm.SVC(**svm_best_params)
+
+        # --- RF with BEST params ---
+        clf_rf = RandomForestClassifier(**rf_best_params, random_state=42)
+
+        # train
+        clf_svm.fit(X_train_sel, y_train)
+        clf_rf.fit(X_train_sel, y_train)
+        y_pred_train = clf_svm.predict(X_train_sel)
+        y_pred_test = clf_svm.predict(X_test_sel)
+        svm_train_acc.append(accuracy_score(y_train, y_pred_train))
+        svm_acc.append(accuracy_score(y_test, y_pred_test))
+        y_pred_train = clf_rf.predict(X_train_sel)
+        y_pred_test = clf_rf.predict(X_test_sel)
+        rf_train_acc.append(accuracy_score(y_train, y_pred_train))
+        rf_acc.append(accuracy_score(y_test, y_pred_test))
+
+    # plot
     fig, ax = plt.subplots()
 
-    ax.plot(sample_size, svm_acc, marker='o', label='SVM')
-    ax.plot(sample_size, rf_acc, marker='s', label='Random Forest')
+    # SVM
+    ax.plot(sample_size, svm_train_acc, '--', marker='o', label='SVM train')
+    ax.plot(sample_size, svm_acc, '-', marker='o', label='SVM test')
+
+    # RF
+    ax.plot(sample_size, rf_train_acc, '--', marker='s', label='RF train')
+    ax.plot(sample_size, rf_acc, '-', marker='s', label='RF test')
 
     ax.set_title("Learning Curve")
     ax.set_xlabel("Training Sample Size")
     ax.set_ylabel("Accuracy")
-
-    #Accuracy Range
-    ax.set_ylim(0, 1) 
+    ax.set_ylim(0, 1)
     ax.grid(True)
     ax.legend()
 
     plt.show()
-    
 
 
 if __name__=='__main__':
     # specify the data folder
     """"Here you need to specify your own path"""
-    path = 'GEO5017-A2-Classification/pointclouds-500'
+    path = '../GEO5017-A2-Classification/pointclouds-500'
 
     # conduct feature preparation
     print('Start preparing features')
@@ -413,28 +544,40 @@ if __name__=='__main__':
 
     # load the data
     print('Start loading data from the local file')
-    ID, X, y = data_loading()
+    ID, X_raw, y = data_loading()
 
-    # normalise data
+    X_train_raw, X_test_raw, y_train, y_test = train_test_split(
+        X_raw, y,
+        test_size=0.4,
+    )
+
+    # normalise using only training data
     print("Normalising data")
-    X = normalise_features(X)
+    X_train, X_test = normalise_features(X_train_raw, X_test_raw)
 
     # select features
     print("Selecting features")
-    X , best_features = feature_selection(X, y)
-    print(best_features)
+    X_train, best_features = feature_selection(X_train, y_train, d=4)
+    X_test = X_test[:, best_features]
+    print("Selected features:", best_features)
 
     # visualize features
     print('Visualize the features')
-    feature_visualization(best_features,X=X)
+    feature_visualization(best_features,X_train,y_train)
 
     # SVM classification
     print('Start SVM classification')
-    SVM_classification(X, y)
+    svm_clf, svm_results, svm_best_params, svm_best_acc = SVM_classification(
+        X_train, X_test, y_train, y_test
+    )
 
     # RF classification
     print('Start RF classification')
-    RF_classification(X, y)
-    learning_curve(X,y)
+    rf_clf, rf_results, rf_best_params, rf_best_acc = RF_classification(
+        X_train, X_test, y_train, y_test
+    )
+
+    print("Generating learning curve")
+    learning_curve(X_raw, y, best_features, svm_best_params, rf_best_params)
 
 
