@@ -22,7 +22,7 @@ path = '../GEO5017-A2-Classification/pointclouds-500'
 # chosen_model = False lets the program find the best accuracy by iterating over multiple
 # hyperparameters and selecting the best features for the training set.
 
-chosen_model = False # Switch between predefined params and features (True) or optimising (False)
+chosen_model = True # Switch between predefined params and features (True) or optimising (False)
 
 # Predefined hyperparameters
 best_features = [6, 4, 7, 1]
