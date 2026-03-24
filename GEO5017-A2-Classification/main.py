@@ -12,6 +12,32 @@ from os.path import exists, join
 from os import listdir
 from sklearn.ensemble import RandomForestClassifier
 
+# specify the data folder
+path = '../GEO5017-A2-Classification/pointclouds-500'
+
+# chosen_model = True sets classifiers hyperparameters to predefined ones:
+# SVM, n_estimators: 100, max_depth: 5, max_features: "log 2"
+# RF kernel: 'rbf', C: 10, Gamma: "scale"
+
+# chosen_model = False lets the program find the best accuracy by iterating over multiple
+# hyperparameters and selecting the best features for the training set.
+
+chosen_model = False # Switch between predefined params and features (True) or optimising (False)
+
+# Predefined hyperparameters
+best_features = [6, 4, 7, 1]
+
+# Predefined hyperparameters
+chosen_params_rf = {
+        'n_estimators': 100,
+        'max_depth': 5,
+        'max_features': 'log2'
+    }
+chosen_params_svm = {
+        'kernel': 'rbf',
+        'C': 10,
+        "gamma": "scale"
+    }
 
 class urban_object:
     """
@@ -592,23 +618,6 @@ if __name__=='__main__':
         6: "Relative Height",
         7: "Curvature Change"
     }
-
-    # specify the data folder
-    path = '../GEO5017-A2-Classification/pointclouds-500'
-
-    chosen_model = True
-    best_features = [6, 4, 7, 1]
-    chosen_params_rf = {
-            'n_estimators': 100,
-            'max_depth': 5,
-            'max_features': 'log2'
-        }
-    chosen_params_svm = {
-            'kernel': 'rbf',
-            'C': 10,
-            "gamma": "scale"
-        }
-
 
     # conduct feature preparation
     print('Start preparing features')

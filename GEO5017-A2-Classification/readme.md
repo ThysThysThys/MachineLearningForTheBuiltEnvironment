@@ -1,3 +1,9 @@
-The code can be run via the main.py file in the same folder as this readMe.
-It is important to run it from the GEO5017-A2_Classification directory, as the pointcloud data can otherwise not be found.
-Both SVM and Rf methods will be run and the best results will be output, along with a confusion matrix and learning curve.
+The code can be run via main.py in the same folder as this README.
+Run it from the GEO5017-A2-Classification directory, otherwise the point cloud data cannot be found.
+The pipeline includes feature extraction, normalisation, feature selection, and classification using SVM and Random Forest.
+
+The models can either:
+1. Automatically find the best hyperparameters and features (chosen_model = False), or  
+2. Use predefined (chosen) settings (chosen_model = True).
+
+The script outputs accuracy, F1-scores, confusion matrices, and a learning curve.
