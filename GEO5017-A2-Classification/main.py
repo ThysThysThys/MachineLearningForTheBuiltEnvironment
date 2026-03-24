@@ -1,11 +1,3 @@
-"""
-This demo shows how to visualize the designed features. Currently, only 2D feature space visualization is supported.
-I use the same data for A2 as my input.
-Each .xyz file is initialized as one urban object, from where a feature vector is computed.
-6 features are defined to describe an urban object.
-Required libraries: numpy, scipy, scikit learn, matplotlib, tqdm 
-"""
-
 import math
 import matplotlib.pyplot as plt
 import numpy as np
@@ -50,11 +42,13 @@ class urban_object:
 
         Features taken into account :
             - Linearity
-            - Sphericity
             - Planarity
+            - Sphericity
             - Verticality
             - Area
+            - Shape index
             - Relative Z height
+            - Curvature change
         """
         kd_tree_3d = KDTree(self.points, leaf_size=5)
         
@@ -188,6 +182,9 @@ def feature_selection(features, labels, d=4):
     return features[:, selected_features], selected_features
 
 def normalise_features(X_train, X_test):
+    """
+    Normalises the features
+    """
     min_vals = np.min(X_train, axis=0)
     max_vals = np.max(X_train, axis=0)
     denom = (max_vals - min_vals) + 1e-12
@@ -597,7 +594,6 @@ if __name__=='__main__':
     }
 
     # specify the data folder
-    """"Here you need to specify your own path"""
     path = '../GEO5017-A2-Classification/pointclouds-500'
 
     chosen_model = True
