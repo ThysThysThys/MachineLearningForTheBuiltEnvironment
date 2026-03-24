@@ -12,7 +12,7 @@ import numpy as np
 from sklearn.neighbors import KDTree
 from sklearn import svm
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
 from sklearn.metrics import ConfusionMatrixDisplay
 from scipy.spatial import ConvexHull
 from tqdm import tqdm
@@ -72,21 +72,21 @@ class urban_object:
 
         w, v = np.linalg.eig(cov)
 
-        w.sort()
-
-        #Feature 1 : Linearity
-        linearity = (w[2]-w[1]) / (w[2] + 1e-5)
-
-        #Feature 2 : Sphericity
-        sphericity = w[0] / (w[2] + 1e-5)
-
-        #Feature 3 : Planarity
-        planarity = (w[1] - w[0] )/( w[2] + 1e-5)
-
-        #Feature 4: Verticality
-        idx = w.argsort()[::-1] 
+        idx = w.argsort()[::-1]
+        w = w[idx]
         v = v[:, idx]
-        e1, e2, e3 = v[:, 0], v[:, 1], v[:, 2]  # noqa: F841
+
+        # Feature 1: Linearity
+        linearity = (w[0] - w[1]) / (w[0] + 1e-5)
+
+        # Feature 2: Planarity
+        planarity = (w[1] - w[2]) / (w[0] + 1e-5)
+
+        # Feature 3: Sphericity
+        sphericity = w[2] / (w[0] + 1e-5)
+
+        # Feature 4: Verticality
+        e3 = v[:, 2]
         z_axis = np.array([0, 0, 1])
         verticality = 1 - np.abs(np.dot(e3, z_axis))
 
@@ -192,10 +192,14 @@ def normalise_features(X_train, X_test):
     max_vals = np.max(X_train, axis=0)
     denom = (max_vals - min_vals) + 1e-12
 
-    X_train = (X_train - min_vals) / denom
-    X_test = (X_test - min_vals) / denom
+    X_train_norm = (X_train - min_vals) / denom
 
-    return X_train, X_test
+    if X_test is not None:
+        X_test_norm = (X_test - min_vals) / denom
+        return X_train_norm, X_test_norm
+    else:
+        return X_train_norm
+
 
 def read_xyz(filenm):
     """
@@ -353,7 +357,7 @@ def confusion_matrix_display(flag,classifier,X_test,y_test):
 
 
 
-def SVM_classification(X_train, X_test, y_train, y_test):
+def SVM_classification(X_train, X_test, y_train, y_test, chosen_model=False, chosen_params=None):
     """
     Conduct SVM classification with kernel and hyperparameter comparison
     on a precomputed train/test split.
@@ -361,12 +365,23 @@ def SVM_classification(X_train, X_test, y_train, y_test):
     kernels = ['linear', 'poly', 'rbf', 'sigmoid']
     C_values = [0.01, 0.1, 1, 10]
     gamma_values = ['scale', 0.01, 0.1, 1]
+    degree_values = [2, 3, 4, 5]
 
     results = []
 
     best_acc = -1
     best_params = None
     best_clf = None
+
+    if chosen_model:
+        best_params = chosen_params
+        clf = svm.SVC(kernel=best_params['kernel'], C=best_params['C'], gamma=best_params['gamma'])
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
+        print("\nChosen SVM params:", best_params)
+        print(f"SVM accuracy: {acc:.5f}")
+        return clf, results, best_params, acc
 
     for kernel in kernels:
         for C in C_values:
@@ -386,6 +401,36 @@ def SVM_classification(X_train, X_test, y_train, y_test):
                     best_params = {'kernel': kernel, 'C': C}
                     best_clf = clf
 
+            elif kernel == 'poly':
+                for gamma in gamma_values:
+                    for degree in degree_values:
+                        clf = svm.SVC(
+                            kernel=kernel,
+                            C=C,
+                            gamma=gamma,
+                            degree=degree
+                        )
+
+                        clf.fit(X_train, y_train)
+                        y_pred = clf.predict(X_test)
+                        acc = accuracy_score(y_test, y_pred)
+
+                        results.append((kernel, C, gamma, degree, acc))
+                        print(
+                            f"SVM kernel={kernel:<8} C={C:<6} "
+                            f"gamma={str(gamma):<6} degree={degree:<2} "
+                            f"accuracy={acc:.5f}"
+                        )
+
+                        if acc > best_acc:
+                            best_acc = acc
+                            best_params = {
+                                'kernel': kernel,
+                                'C': C,
+                                'gamma': gamma,
+                                'degree': degree
+                            }
+                            best_clf = clf
             else:
                 for gamma in gamma_values:
                     clf = svm.SVC(kernel=kernel, C=C, gamma=gamma)
@@ -404,20 +449,17 @@ def SVM_classification(X_train, X_test, y_train, y_test):
 
     print("\nBest SVM params:", best_params)
     print(f"Best SVM accuracy: {best_acc:.5f}")
-    print("Visualise the Confusion Matrix")
-    flag = 0
-    confusion_matrix_display(flag=flag, classifier=best_clf, X_test=X_test, y_test=y_test)
 
     return best_clf, results, best_params, best_acc
 
 
-def RF_classification(X_train, X_test, y_train, y_test):
+def RF_classification(X_train, X_test, y_train, y_test, chosen_model=False, chosen_params=None ):
     """
     Conduct RF classification with hyperparameter comparison
     on a precomputed train/test split.
     """
     n_estimators_values = [50, 100, 200]
-    max_depth_values = [5, 10, 20]
+    max_depth_values = [5, 10, 20, None]
     max_features_values = ['sqrt', 'log2']
 
     results = []
@@ -426,6 +468,18 @@ def RF_classification(X_train, X_test, y_train, y_test):
     best_params = None
     best_clf = None
 
+    if chosen_model:
+        best_params = chosen_params
+        clf = RandomForestClassifier(n_estimators=best_params['n_estimators'], max_depth=best_params['max_depth'], max_features=best_params['max_features'])
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
+        print("\nChosen RF params:", best_params)
+        print(f"RF accuracy: {acc:.5f}")
+
+        return clf, results, best_params, acc
+
+
     for n_estimators in n_estimators_values:
         for max_depth in max_depth_values:
             for max_features in max_features_values:
@@ -433,7 +487,6 @@ def RF_classification(X_train, X_test, y_train, y_test):
                     n_estimators=n_estimators,
                     max_depth=max_depth,
                     max_features=max_features,
-                    random_state=42
                 )
 
                 clf.fit(X_train, y_train)
@@ -461,10 +514,6 @@ def RF_classification(X_train, X_test, y_train, y_test):
     print("\nBest RF params:", best_params)
     print(f"Best RF accuracy: {best_acc:.5f}")
 
-    print("Visualise the Confusion Matrix")
-    flag = 0
-    confusion_matrix_display(flag=flag, classifier=best_clf, X_test=X_test, y_test=y_test)
-
     return best_clf, results, best_params, best_acc
 
 def learning_curve(X, y, best_features, svm_best_params, rf_best_params):
@@ -485,6 +534,7 @@ def learning_curve(X, y, best_features, svm_best_params, rf_best_params):
         X_train_raw, X_test_raw, y_train, y_test = train_test_split(
             X, y,
             test_size=test_size,
+            stratify=y,
         )
 
         sample_size.append(len(X_train_raw))
@@ -534,9 +584,35 @@ def learning_curve(X, y, best_features, svm_best_params, rf_best_params):
 
 
 if __name__=='__main__':
+    class_names = ["building", "car", "fence", "pole", "tree"]
+    feature_names = {
+        0: "Linearity",
+        1: "Sphericity",
+        2: "Planarity",
+        3: "Verticality",
+        4: "Area",
+        5: "Shape Index",
+        6: "Relative Height",
+        7: "Curvature Change"
+    }
+
     # specify the data folder
     """"Here you need to specify your own path"""
     path = '../GEO5017-A2-Classification/pointclouds-500'
+
+    chosen_model = True
+    best_features = [6, 4, 7, 1]
+    chosen_params_rf = {
+            'n_estimators': 100,
+            'max_depth': 5,
+            'max_features': 'log2'
+        }
+    chosen_params_svm = {
+            'kernel': 'rbf',
+            'C': 10,
+            "gamma": "scale"
+        }
+
 
     # conduct feature preparation
     print('Start preparing features')
@@ -549,17 +625,25 @@ if __name__=='__main__':
     X_train_raw, X_test_raw, y_train, y_test = train_test_split(
         X_raw, y,
         test_size=0.4,
+        stratify=y
     )
 
     # normalise using only training data
     print("Normalising data")
     X_train, X_test = normalise_features(X_train_raw, X_test_raw)
+    X_all = normalise_features(X_raw, None)
 
     # select features
     print("Selecting features")
-    X_train, best_features = feature_selection(X_train, y_train, d=4)
+    if chosen_model:
+        X_train = X_train[:, best_features]
+    else:
+        X_train, best_features = feature_selection(X_train, y_train, d=4)
     X_test = X_test[:, best_features]
-    print("Selected features:", best_features)
+
+    selected_feature_names = [feature_names[i] for i in best_features]
+    print(f"Selected feature names {best_features}:", selected_feature_names)
+
 
     # visualize features
     print('Visualize the features')
@@ -568,16 +652,39 @@ if __name__=='__main__':
     # SVM classification
     print('Start SVM classification')
     svm_clf, svm_results, svm_best_params, svm_best_acc = SVM_classification(
-        X_train, X_test, y_train, y_test
+        X_train, X_test, y_train, y_test, chosen_model, chosen_params_svm
     )
+    best_f1_svm = f1_score(y_test, svm_clf.predict(X_test), average=None, labels=[0,1,2,3,4])
+    f1_svm = f1_score(y_test, svm_clf.predict(X_test), average='macro')
+    print(f"Best SVM F1-score for each class: {class_names[0]}: {best_f1_svm[0]:.5f}, {class_names[1]}: {best_f1_svm[1]:.5f}, {class_names[2]}: {best_f1_svm[2]:.5f}, {class_names[3]}: {best_f1_svm[3]:.5f}, {class_names[4]}: {best_f1_svm[4]:.5f}")
+    print(f"Best SVM F1-score: {f1_svm}\n")
+
+    print("Visualise the Confusion Matrix\n")
+    confusion_matrix_display(flag=0, classifier=svm_clf, X_test=X_test, y_test=y_test)
 
     # RF classification
     print('Start RF classification')
     rf_clf, rf_results, rf_best_params, rf_best_acc = RF_classification(
-        X_train, X_test, y_train, y_test
+        X_train, X_test, y_train, y_test, chosen_model, chosen_params_rf
     )
 
-    print("Generating learning curve")
+    best_f1_rf = f1_score(y_test, rf_clf.predict(X_test), average=None, labels=[0,1,2,3,4])
+    f1_rf = f1_score(y_test, rf_clf.predict(X_test), average='macro')
+
+    print(f"Best RF F1-score for each class: {class_names[0]}: {best_f1_rf[0]:.5f}, {class_names[1]}: {best_f1_rf[1]:.5f}, {class_names[2]}: {best_f1_rf[2]:.5f}, {class_names[3]}: {best_f1_rf[3]:.5f}, {class_names[4]}: {best_f1_rf[4]:.5f}")
+    print(f"Best RF F1-score: {f1_rf}\n")
+
+    print("Visualize the Confusion Matrix\n")
+    confusion_matrix_display(flag=1, classifier=rf_clf, X_test=X_test, y_test=y_test)
+
+    print("Generating learning curve\n")
     learning_curve(X_raw, y, best_features, svm_best_params, rf_best_params)
+
+
+    print("Summary:")
+    print(f"Selected feature names {best_features}:", selected_feature_names)
+    print(f"Best SVM hyperparameters:, {svm_best_params}, Best RF hyperparameters:, {rf_best_params}")
+    print(f"Best SVM accuracy: {svm_best_acc:.5f}, Best RF accuracy: {rf_best_acc:.5f}")
+    print(f"Best SVM f1-score: {f1_svm:.5f}, Best RF f1-score: {f1_rf:.5f}")
 
 
