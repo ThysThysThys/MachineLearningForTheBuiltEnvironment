@@ -19,12 +19,25 @@ def train():
 def test():
     model = YOLO(model_path + model_path_output + "/train/weights/best.pt")
     print("starting testing")
-    results = model.predict("Test_data_small")
-    results.sort(key= lambda r: 0 if r.probs is None else r.probs.top1conf[0].item(), reverse=True)
-    results = results[:100]
+    results = model.predict("Test_data")
+
+    scored_results = []
     for result in results:
-        print("None" if result.probs is None else result.probs.top1conf)
-        result.save()
+        if len(result.boxes) > 0:
+            max_conf = result.boxes.conf.max().item()
+            scored_results.append((result, max_conf))
+
+    scored_results.sort(key= lambda x: x[1], reverse=True)
+    top_100 = scored_results[:100]
+
+    for i, (result, score) in enumerate(top_100):
+        result.save(filename=os.path.join("results", os.path.basename(result.path)))
+
+    # results.sort(key= lambda r: 0 if r.probs is None else r.probs.top1conf[0].item(), reverse=True)
+    # results = results[:100]
+    # for result in results:
+    #     print("None" if result.probs is None else result.probs.top1conf)
+    #     result.save()
 
 if __name__ == '__main__':
     if not os.path.exists(model_path + model_path_output):
