@@ -1,0 +1,12 @@
+# 1. The root path must be a string (enclosed in quotes) because it contains spaces
+path: "/Users/geethav/Downloads/Masters in Geomatics/Quarter 3/GEO5017-Machine Learning for the Built Environment/Assignments/Assignment-1/MachineLearningForTheBuiltEnvironment/GEO5017-A3-UrbanWaste/Dataset_train"
+
+# 2. Paths are relative to the 'path' defined above
+train: train/images
+val: val/images
+test: /Users/geethav/Downloads/Masters in Geomatics/Quarter 3/GEO5017-Machine Learning for the Built Environment/Assignments/Assignment-1/MachineLearningForTheBuiltEnvironment/GEO5017-A3-UrbanWaste/data.yaml
+# 3. You must specify the Number of Classes (nc)
+nc: 5
+
+# 4. 'names' should be a simple list (cleaner) or a properly indented dictionary
+names: ['Bulky Waste', 'Garbage Bags', 'Cardboard', 'Litter', 'Other']
