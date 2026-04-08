@@ -3,9 +3,9 @@ import cv2
 from ultralytics import YOLO
 
 # 1. Setup
-model_path = 'runs/detect/UrbanWaste_sz800_b32/weights/best.pt'
+model_path = 'runs/detect/UrbanWaste_sz800_b16/weights/best.pt'
 test_images_path = 'GEO5017-A3-UrbanWaste/Dataset_test/images'
-output_dir = 'runs/detect/Top_100_Final_Visuals_sz800_b32'
+output_dir = 'runs/detect/Top_100_Final_Visuals_sz800_b16'
 os.makedirs(output_dir, exist_ok=True)
 
 model = YOLO(model_path)
@@ -13,7 +13,7 @@ model = YOLO(model_path)
 # 2. Run prediction with a VERY low threshold to find everything
 # We use conf=0.01 so we don't miss a single potential piece of trash
 print("🔍 Scanning all test images...")
-results = list(model.predict(source=test_images_path, conf=0.01, device='mps', verbose=False))
+results = list(model.predict(source=test_images_path, imgsz=800,conf=0.01, device='mps', verbose=False))
 
 # 3. Rank images by their BEST detection
 image_scores = []
