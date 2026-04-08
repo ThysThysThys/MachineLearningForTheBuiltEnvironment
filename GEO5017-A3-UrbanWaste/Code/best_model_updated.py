@@ -12,7 +12,8 @@ test_results = []
 
 for folder in model_folders:
     model_path = os.path.join(runs_dir, folder, 'weights', 'best.pt')
-    if not os.path.exists(model_path): continue
+    if not os.path.exists(model_path): 
+        continue
     
     print(f"🚀 Evaluating: {folder}")
     model = YOLO(model_path)
