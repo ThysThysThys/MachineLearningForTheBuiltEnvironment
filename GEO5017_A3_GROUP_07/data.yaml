@@ -1,0 +1,8 @@
+# paths to training, validation and test directories; replace depending on user's system. They should point to the Dataset_train/train, Dataset_train/val and Dataset_test directories of this project respectively.
+train: /Users/geethav/Downloads/Masters in Geomatics/Quarter 3/GEO5017-Machine Learning for the Built Environment/Assignments/Assignment-1/MachineLearningForTheBuiltEnvironment/GEO5017-A3-UrbanWaste/Dataset_train/train/images
+val: /Users/geethav/Downloads/Masters in Geomatics/Quarter 3/GEO5017-Machine Learning for the Built Environment/Assignments/Assignment-1/MachineLearningForTheBuiltEnvironment/GEO5017-A3-UrbanWaste/Dataset_train/val/images
+test: /Users/geethav/Downloads/Masters in Geomatics/Quarter 3/GEO5017-Machine Learning for the Built Environment/Assignments/Assignment-1/MachineLearningForTheBuiltEnvironment/GEO5017-A3-UrbanWaste/Dataset_test/images
+
+# waste categories
+nc: 5
+names: ['Bulky Waste', 'Garbage Bags', 'Cardboard', 'Litter', 'Other']
