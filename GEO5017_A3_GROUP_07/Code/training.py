@@ -4,6 +4,7 @@ from ultralytics import YOLO
 data_path = 'data.yaml'         # path to data yaml
 num_epochs = 30
 imgsz = 640
+batch_size = 16
 runs_on_mac = True              # for running with GPU
 
 if __name__ == "__main__":
@@ -20,7 +21,8 @@ if __name__ == "__main__":
     results = model.train(
         data=data_path,
         epochs=num_epochs,
-        imgsz=imgsz,           
+        imgsz=imgsz, 
+        batch=batch_size,          
         device=device,         # for running on GPU
         project='UrbanWaste',
         name='version_1'

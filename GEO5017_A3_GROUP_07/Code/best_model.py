@@ -10,7 +10,7 @@ runs_dir = '../runs/detect'
 runs_on_mac = True
 
 if __name__ == "__main__":
-    # get 5 folders of models with different hyperparameters to be checked
+    # get folders of models with different hyperparameters to be checked
     model_folders = [d for d in os.listdir(runs_dir) if 'UrbanWaste' in d]
 
     test_results = []
