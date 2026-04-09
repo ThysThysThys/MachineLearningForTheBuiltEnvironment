@@ -4,7 +4,7 @@ import pandas as pd
 
 # parameters
 # path to data yaml, ensure 'test:' path is in here
-data_yaml = 'data.yaml'
+data_yaml = '../data.yaml'
 runs_dir = '../runs/detect'
 # for GPU running
 runs_on_mac = True
