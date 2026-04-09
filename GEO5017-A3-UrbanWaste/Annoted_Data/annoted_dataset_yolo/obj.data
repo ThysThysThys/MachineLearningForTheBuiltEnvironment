@@ -1,5 +1,0 @@
-classes = 7
-Validation = data/Validation.txt
-train = data/train.txt
-names = data/obj.names
-backup = backup/
